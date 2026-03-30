@@ -1,54 +1,69 @@
 import * as THREE from 'three'
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
+import { EXRLoader } from 'three/examples/jsm/loaders/EXRLoader.js'
 
-// シーン・カメラ・レンダラーのセットアップ
 const scene = new THREE.Scene()
 
 const camera = new THREE.PerspectiveCamera(
   75,
   window.innerWidth / window.innerHeight,
   0.1,
-  1000
+  5000
 )
-camera.position.set(0, 5, 10)
+// カメラ位置はここを変えて調整してね
+camera.position.set(0, 100, 10)
+camera.lookAt(0, 0, 0)
 
 const renderer = new THREE.WebGLRenderer({ antialias: true })
 renderer.setSize(window.innerWidth, window.innerHeight)
 renderer.setPixelRatio(window.devicePixelRatio)
+// EXRをきれいに表示するために必要
+renderer.toneMapping = THREE.ACESFilmicToneMapping
+renderer.toneMappingExposure = 1.0
 document.body.appendChild(renderer.domElement)
 
-// コントロール（マウスでぐりぐり動かせる）
 const controls = new OrbitControls(camera, renderer.domElement)
 controls.enableDamping = true
+
+// 環境テクスチャの読み込み
+const pmremGenerator = new THREE.PMREMGenerator(renderer)
+pmremGenerator.compileEquirectangularShader()
+
+const exrLoader = new EXRLoader()
+exrLoader.load('/textures/sky.exr', (texture) => {
+  const envMap = pmremGenerator.fromEquirectangular(texture).texture
+  
+  scene.background = envMap   // 背景として表示
+  scene.environment = envMap  // モデルへの反射にも使う
+  
+  texture.dispose()
+  pmremGenerator.dispose()
+})
 
 // ライティング
 const ambientLight = new THREE.AmbientLight(0xffffff, 1.0)
 scene.add(ambientLight)
 
-const directionalLight = new THREE.DirectionalLight(0xffffff, 2.0)
+const directionalLight = new THREE.DirectionalLight(0xffffff, 1.0)
 directionalLight.position.set(5, 10, 5)
 scene.add(directionalLight)
 
-// GLTFLoaderでモデルを読み込む
+// モデルの読み込み
 const loader = new GLTFLoader()
 loader.load(
-  '/models/land.glb',       // publicフォルダからのパス
+  '/models/land.glb',
   (gltf) => {
-    // 読み込み完了したらシーンに追加
     scene.add(gltf.scene)
   },
   (progress) => {
-    // 読み込み中
     console.log('Loading...', (progress.loaded / progress.total * 100) + '%')
   },
   (error) => {
-    // エラー
     console.error('Error:', error)
   }
 )
 
-// アニメーションループ
 function animate() {
   requestAnimationFrame(animate)
   controls.update()
@@ -56,7 +71,6 @@ function animate() {
 }
 animate()
 
-// リサイズ対応
 window.addEventListener('resize', () => {
   camera.aspect = window.innerWidth / window.innerHeight
   camera.updateProjectionMatrix()
