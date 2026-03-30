@@ -8,10 +8,10 @@ import { SkyMesh } from 'three/examples/jsm/objects/SkyMesh.js'
 const scene = new THREE.Scene()
 
 const camera = new THREE.PerspectiveCamera(
-  55,
-  window.innerWidth / window.innerHeight,
-  1,
-  20000
+    55,
+    window.innerWidth / window.innerHeight,
+    1,
+    20000
 )
 camera.position.set(0, 30, 100)
 
@@ -39,7 +39,7 @@ scene.add(sky)
 
 sky.turbidity.value = 10
 sky.rayleigh.value = 2
-sky.mieCoefficient.value = 0.005
+sky.mieCoefficient.value = 0.001
 sky.mieDirectionalG.value = 0.8
 
 // ⑤ 海面
@@ -48,11 +48,11 @@ const waterNormals = new THREE.TextureLoader().load('/textures/waternormals.jpg'
 waterNormals.wrapS = waterNormals.wrapT = THREE.RepeatWrapping
 
 const water = new WaterMesh(waterGeometry, {
-  waterNormals: waterNormals,
-  sunDirection: new THREE.Vector3(),
-  sunColor: 0xffffff,
-  waterColor: 0x001e0f,
-  distortionScale: 3.7,
+    waterNormals: waterNormals,
+    sunDirection: new THREE.Vector3(),
+    sunColor: 0xffffff,
+    waterColor: 0x001e0f,
+    distortionScale: 3.7,
 })
 water.rotation.x = -Math.PI / 2
 scene.add(water)
@@ -63,51 +63,51 @@ const sceneEnv = new THREE.Scene()
 let renderTarget
 
 function updateSun() {
-  const phi = THREE.MathUtils.degToRad(90 - 2)
-  const theta = THREE.MathUtils.degToRad(180)
+    const phi = THREE.MathUtils.degToRad(90 - 10)
+    const theta = THREE.MathUtils.degToRad(180)
 
-  sun.setFromSphericalCoords(1, phi, theta)
+    sun.setFromSphericalCoords(1, phi, theta)
 
-  sky.sunPosition.value.copy(sun)
-  water.sunDirection.value.copy(sun).normalize()
+    sky.sunPosition.value.copy(sun)
+    water.sunDirection.value.copy(sun).normalize()
 
-  if (renderTarget !== undefined) renderTarget.dispose()
+    if (renderTarget !== undefined) renderTarget.dispose()
 
-  sceneEnv.add(sky)
-  renderTarget = pmremGenerator.fromScene(sceneEnv)
-  scene.add(sky)
+    sceneEnv.add(sky)
+    renderTarget = pmremGenerator.fromScene(sceneEnv)
+    scene.add(sky)
 
-  scene.environment = renderTarget.texture
+    scene.environment = renderTarget.texture
 }
 
 // ⑦ 陸モデルの読み込み
-const loader = new GLTFLoader()
-loader.load(
-  '/models/land.glb',
-  (gltf) => {
-    scene.add(gltf.scene)
-  },
-  (progress) => {
-    console.log('Loading...', (progress.loaded / progress.total * 100) + '%')
-  },
-  (error) => {
-    console.error('Error:', error)
-  }
-)
+// const loader = new GLTFLoader()
+// loader.load(
+//     '/models/land.glb',
+//     (gltf) => {
+//         scene.add(gltf.scene)
+//     },
+//     (progress) => {
+//         console.log('Loading...', (progress.loaded / progress.total * 100) + '%')
+//     },
+//     (error) => {
+//         console.error('Error:', error)
+//     }
+// )
 
 // ⑧ WebGPU初期化後にupdateSunを呼ぶ
 renderer.init().then(updateSun)
 
 // ⑨ アニメーションループ
 function render() {
-  controls.update()
-  renderer.render(scene, camera)
+    controls.update()
+    renderer.render(scene, camera)
 }
 renderer.setAnimationLoop(render)
 
 // ⑩ リサイズ対応
 window.addEventListener('resize', () => {
-  camera.aspect = window.innerWidth / window.innerHeight
-  camera.updateProjectionMatrix()
-  renderer.setSize(window.innerWidth, window.innerHeight)
+    camera.aspect = window.innerWidth / window.innerHeight
+    camera.updateProjectionMatrix()
+    renderer.setSize(window.innerWidth, window.innerHeight)
 })
